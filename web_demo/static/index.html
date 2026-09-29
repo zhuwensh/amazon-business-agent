@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>BusinessFlow Agent — simulated Alexa+ experience</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>BusinessFlow Agent</h1>
+      <span class="subtitle">simulated Alexa+ experience &middot; MCP over Streamable HTTP</span>
+    </div>
+    <div class="status" id="status">connecting…</div>
+  </header>
+
+  <main>
+    <section class="stage">
+      <button id="mic" class="orb" aria-label="Hold to talk">
+        <span class="ring"></span>
+        <span class="label">Talk</span>
+      </button>
+      <p class="hint" id="hint">Press the orb and ask a question, or type below.</p>
+
+      <div class="transcript" id="transcript"></div>
+
+      <form class="composer" id="composer">
+        <input id="input" type="text" autocomplete="off"
+               placeholder="Does Acme have anything overdue?" />
+        <button type="submit">Send</button>
+        <button type="button" id="reset" class="ghost">Reset</button>
+      </form>
+    </section>
+
+    <aside class="trace-panel">
+      <h2>Tool trace</h2>
+      <p class="muted">The agent chooses these calls — they are not scripted.</p>
+      <div id="trace" class="trace"></div>
+      <h2>MCP tools discovered</h2>
+      <ul id="tools" class="tools"></ul>
+    </aside>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

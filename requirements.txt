@@ -1,0 +1,19 @@
+# Core integration surface (Alexa+ track requirement: self-hosted MCP server,
+# spec 2025-11-25+, Streamable HTTP).
+mcp==1.28.1
+fastmcp==3.4.4
+
+# Business integrations
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Agent loop + web simulator
+openai>=1.30.0
+fastapi>=0.110.0
+uvicorn>=0.27.0
+
+# ---------------------------------------------------------------------------
+# Optional: AWS Builder mini challenge (Bedrock / Strands Agents SDK).
+# Install separately when wiring the AWS path:
+#   pip install boto3 strands-agents
+# ---------------------------------------------------------------------------

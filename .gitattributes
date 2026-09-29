@@ -1,0 +1,9 @@
+# Store text as LF in the repository so the code reads the same everywhere.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.pdf binary
