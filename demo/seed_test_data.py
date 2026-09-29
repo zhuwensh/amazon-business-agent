@@ -33,24 +33,53 @@ def _unix(days_from_now: int) -> int:
     return int(moment.replace(hour=12, minute=0, second=0, microsecond=0).timestamp())
 
 
-def _create_customer(display_name: str, email: str) -> str:
-    key = display_name.split()[0].lower()
+def _create_customer(name: str, email: str) -> str:
+    # Reuse an existing customer when its id is provided, so re-running the seeder
+    # does not pile up duplicates.
+    key = name.split()[0].lower()
     handle = os.environ.get(f"DEMO_CUSTOMER_{key.upper()}_ID")
     if handle:
-        print(f"  reusing {display_name} ({handle})")
+        print(f"  reusing {name} ({handle})")
         return handle
 
-    customer = stripe.create_customer(name=display_name, email=email)
-    print(f"  created {display_name} ({customer['id']})")
+    # Also reuse a customer with the same name and email: a demo account may
+    # already contain one, and duplicates would make the agent ask which customer
+    # was meant on every run.
+    existing = _find_customer_by_name_email(name, email)
+    if existing:
+        print(f"  reusing existing {name} ({existing})")
+        return existing
+
+    customer = stripe.create_customer(name=name, email=email)
+    print(f"  created {name} ({customer['id']})")
     return customer["id"]
+
+
+def _find_customer_by_name_email(name: str, email: str) -> str | None:
+    wanted_name = (name or "").strip().lower()
+    wanted_email = (email or "").strip().lower()
+    for customer in stripe.list_customers(limit=100):
+        same_name = (customer.get("name") or "").strip().lower() == wanted_name
+        same_email = (customer.get("email") or "").strip().lower() == wanted_email
+        if same_name and same_email:
+            return customer["id"]
+    return None
 
 
 def _create_invoice(
     customer_id: str, amount_minor: int, description: str, due_in_days: int
 ) -> dict:
     stripe.create_invoice_item(customer_id, amount_minor, description=description)
-    invoice = stripe.create_invoice(customer_id, due_date=_unix(due_in_days))
-    return stripe.finalize_invoice(invoice["id"])
+    # Stripe rejects a `due_date` in the past at creation, so create and finalize
+    # with a future due date and then back-date the invoice. Back-dating is what
+    # produces a genuinely overdue invoice.
+    lead_time = due_in_days if due_in_days > 0 else 30
+    invoice = stripe.finalize_invoice(
+        stripe.create_invoice(customer_id, due_date=_unix(lead_time))["id"]
+    )
+    if due_in_days <= 0:
+        invoice = stripe.update_invoice_due_date(invoice["id"], _unix(due_in_days))
+    return invoice
 
 
 def main() -> None:

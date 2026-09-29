@@ -13,12 +13,12 @@ Transport:
 from __future__ import annotations
 
 import os
-import sys
 from typing import Any
 
 from fastmcp import FastMCP
 
 from . import business_rules as rules
+from . import config
 from . import messages
 from . import slack_tools as slack
 from . import stripe_tools as stripe
@@ -258,13 +258,10 @@ def notify_finance_team(message: str, confirmed: bool = False) -> dict[str, Any]
 
 
 def main() -> None:
-    # Windows consoles default to a legacy code page (cp932 on this machine);
-    # printing a non-ASCII character would abort startup before the server binds.
-    # Keep the banner ASCII and make stdout forgiving anyway.
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001 - not fatal
-        pass
+    # Windows consoles default to a legacy code page; a non-ASCII character in a
+    # print call would abort startup before the server binds. Keep the banner ASCII
+    # and make stdout forgiving anyway.
+    config.bootstrap()
 
     use_http = (os.environ.get("MCP_HTTP") or "").strip().lower() in {"1", "true", "yes"}
     print("BusinessFlow Agent - MCP server")

@@ -10,7 +10,6 @@ in, voice out, and a visible tool trace so the orchestration is inspectable.
 from __future__ import annotations
 
 import os
-import sys
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +21,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from pydantic import BaseModel
 
 from agent.agent import DEFAULT_MCP_URL, BusinessAgent
+from mcp_server.config import bootstrap
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -75,10 +75,7 @@ async def reset(session_id: str = "web") -> dict[str, Any]:
 def main() -> None:
     import uvicorn
 
-    try:
-        sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # type: ignore[attr-defined]
-    except Exception:  # noqa: BLE001 - not fatal
-        pass
+    bootstrap()
 
     port = int((os.environ.get("WEB_PORT") or "8080").strip() or "8080")
     print(f"BusinessFlow Agent simulator: http://127.0.0.1:{port}")

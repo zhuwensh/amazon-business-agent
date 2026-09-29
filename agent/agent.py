@@ -20,6 +20,8 @@ from typing import Any, Sequence
 from mcp import ClientSession
 from mcp.client.streamable_http import streamablehttp_client
 
+from mcp_server.config import bootstrap
+
 from . import prompts
 from .llm import Backend, ModelReply, build_backend
 
@@ -137,6 +139,8 @@ class BusinessAgent:
 
 
 async def _amain(argv: Sequence[str] | None = None) -> int:
+    bootstrap()
+
     parser = argparse.ArgumentParser(description="BusinessFlow Agent — CLI")
     parser.add_argument("question", nargs="*", help="the request, in natural language")
     parser.add_argument("--mcp-url", default=None, help=f"default: {DEFAULT_MCP_URL}")

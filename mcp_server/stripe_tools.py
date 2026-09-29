@@ -179,6 +179,16 @@ def finalize_invoice(invoice_id: str) -> dict[str, Any]:
     return _request("POST", f"/v1/invoices/{invoice_id}/finalize")
 
 
+def update_invoice_due_date(invoice_id: str, due_date: int) -> dict[str, Any]:
+    """Back-date an open invoice.
+
+    Stripe refuses a `due_date` in the past when the invoice is created, so the
+    only way to produce a genuinely overdue invoice on demand is to create it with
+    a future due date and then move the due date back.
+    """
+    return _request("POST", f"/v1/invoices/{invoice_id}", data={"due_date": int(due_date)})
+
+
 def enrich_customer(invoice: dict[str, Any], customers_by_id: dict[str, dict[str, Any]]) -> dict[str, Any]:
     """Attach a readable customer name to an invoice for display purposes."""
     customer_id = invoice.get("customer")

@@ -13,6 +13,7 @@ worth running before recording the demo:
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import pathlib
 import subprocess
@@ -23,6 +24,8 @@ sys.path.insert(0, str(REPO_ROOT))
 
 from mcp import ClientSession  # noqa: E402
 from mcp.client.streamable_http import streamablehttp_client  # noqa: E402
+
+from mcp_server.config import bootstrap  # noqa: E402
 
 PORT = int(os.environ.get("SMOKE_TEST_PORT", "8765"))
 URL = f"http://127.0.0.1:{PORT}/mcp"
@@ -65,7 +68,72 @@ def _server_log_tail(lines: int = 25) -> str:
     return "\n".join(content[-lines:]) or "(server log empty)"
 
 
+async def _call(session: ClientSession, name: str, arguments: dict) -> dict:
+    result = await asyncio.wait_for(session.call_tool(name, arguments), timeout=30)
+    text = result.content[0].text if result.content else ""
+    try:
+        return json.loads(text)
+    except (TypeError, ValueError):
+        return {"raw": text}
+
+
+async def _check_live_scenario(session: ClientSession, query: str = "Acme") -> list[str]:
+    """Exercise the demo path against the real Stripe account.
+
+    Read-only by design: the two write tools are called with `confirmed=False`,
+    which is exactly what the agent does before asking the user. Nothing is emailed
+    and nothing is posted to Slack.
+    """
+    failures: list[str] = []
+
+    found = await _call(session, "find_customer", {"query": query})
+    candidates = (found.get("data") or {}).get("candidates") or []
+    if not candidates:
+        failures.append(f"find_customer returned no candidates for '{query}'")
+        return failures
+    top = candidates[0]
+    _say(
+        f"PASS: find_customer('{query}') -> {len(candidates)} candidate(s), "
+        f"best: {top['name']} (score {top['match_score']})"
+    )
+
+    overdue = await _call(
+        session, "get_overdue_invoices", {"customer": top["name"], "customer_id": top["id"]}
+    )
+    if not overdue.get("ok"):
+        failures.append(f"get_overdue_invoices failed: {overdue.get('error')}")
+        return failures
+
+    data = overdue["data"]
+    _say(f"PASS: get_overdue_invoices -> {data['count']} overdue from {top['name']}")
+    _say("      spoken: " + str(overdue.get("spoken")))
+
+    invoices = data.get("invoices") or []
+    if not invoices:
+        _say("SKIP: write-gate check (this customer has nothing overdue)")
+        return failures
+
+    gate = await _call(
+        session, "send_payment_reminder", {"invoice_id": invoices[0]["id"], "confirmed": False}
+    )
+    if gate.get("needs_confirmation"):
+        _say("PASS: send_payment_reminder asked first: " + str(gate.get("spoken")))
+    else:
+        failures.append("send_payment_reminder did not require confirmation")
+
+    slack_gate = await _call(
+        session, "notify_finance_team", {"message": "smoke test", "confirmed": False}
+    )
+    if slack_gate.get("needs_confirmation"):
+        _say("PASS: notify_finance_team asked first: " + str(slack_gate.get("spoken")))
+    else:
+        failures.append("notify_finance_team did not require confirmation")
+
+    return failures
+
+
 async def _check() -> int:
+    failures: list[str] = []
     env = {**os.environ, "MCP_HTTP": "1", "MCP_HOST": "127.0.0.1", "MCP_PORT": str(PORT)}
 
     # The child writes to a file rather than to a pipe: a pipe nobody drains will
@@ -97,14 +165,14 @@ async def _check() -> int:
                     _say(f"PASS: {len(tools)} tools exposed: {', '.join(sorted(tools))}")
 
                     if os.environ.get("STRIPE_API_KEY"):
-                        result = await asyncio.wait_for(
-                            session.call_tool("find_customer", {"query": "Acme"}), timeout=30
+                        failures = await _check_live_scenario(
+                            session, os.environ.get("SMOKE_TEST_CUSTOMER", "Acme")
                         )
-                        text = result.content[0].text if result.content else ""
-                        _say(f"PASS: live tool call returned: {text[:200]}")
                     else:
-                        _say("SKIP: live Stripe tool call (STRIPE_API_KEY not set)")
-            return 0
+                        _say("SKIP: live Stripe checks (STRIPE_API_KEY not set)")
+            for failure in failures:
+                _say("FAIL: " + failure)
+            return 1 if failures else 0
         finally:
             server.terminate()
             try:
@@ -114,6 +182,7 @@ async def _check() -> int:
 
 
 async def main() -> int:
+    bootstrap()
     try:
         return await asyncio.wait_for(_check(), timeout=TOTAL_TIMEOUT)
     except asyncio.TimeoutError:
