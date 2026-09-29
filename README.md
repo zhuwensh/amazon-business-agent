@@ -78,6 +78,17 @@ cp .env.example .env      # then fill in STRIPE_API_KEY, SLACK_WEBHOOK_URL, LLM_
 python -m demo.seed_test_data
 ```
 
+The seeder creates a Stripe **test clock** frozen 90 days in the past and writes
+`STRIPE_TEST_CLOCK` into `.env`. The reason is a platform constraint: Stripe
+refuses to create *or* back-date an invoice whose due date is already in the past,
+so a fresh test account cannot simply be handed overdue invoices. A test clock is
+the supported way to produce them — and because objects on a clock are invisible
+to the account-wide list endpoints, the MCP server scopes its reads to that clock.
+
+**Restart the MCP server after seeding**, so it picks the clock up. The script is
+repeatable: it voids the previous run's invoices before creating new ones, so you
+can refresh the numbers immediately before recording.
+
 ### 2. Run the MCP server
 
 ```bash
@@ -140,6 +151,7 @@ and reports the negotiated protocol version.
 | Variable | Purpose |
 |---|---|
 | `STRIPE_API_KEY` | Stripe **test** key (`sk_test_...`) |
+| `STRIPE_TEST_CLOCK` | Optional: scope Stripe reads to a test clock (written by the seeder) |
 | `SLACK_WEBHOOK_URL` | Incoming webhook for the finance channel |
 | `SLACK_FINANCE_CHANNEL` | Channel label used in confirmations (display only) |
 | `LLM_API_KEY` / `LLM_BASE_URL` / `LLM_MODEL` | Agent's model endpoint |
