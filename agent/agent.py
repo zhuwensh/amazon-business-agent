@@ -23,7 +23,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from mcp_server.config import bootstrap
 
 from . import prompts
-from .llm import Backend, ModelReply, build_backend
+from .llm import Backend, ModelReply, build_backend, describe_error
 
 DEFAULT_MCP_URL = "http://127.0.0.1:8000/mcp"
 MAX_TOOL_ROUNDS = 6
@@ -80,6 +80,10 @@ class BusinessAgent:
         history = self._messages(session_id)
         history.append({"role": "user", "content": text})
 
+        # Resolve the model before touching the network: a missing key should read
+        # as a configuration message, not as a transport error.
+        backend = self.backend
+
         async with streamablehttp_client(self.mcp_url) as (read, write, _):
             async with ClientSession(read, write) as session:
                 await session.initialize()
@@ -88,7 +92,7 @@ class BusinessAgent:
 
                 reply = ModelReply(text="")
                 for _ in range(MAX_TOOL_ROUNDS):
-                    reply = self.backend.complete(prompts.SYSTEM_PROMPT, history, tool_defs)
+                    reply = backend.complete(prompts.SYSTEM_PROMPT, history, tool_defs)
                     if not reply.tool_calls:
                         break
 
@@ -165,6 +169,9 @@ def main() -> None:
         raise SystemExit(asyncio.run(_amain()))
     except KeyboardInterrupt:  # pragma: no cover
         sys.exit(130)
+    except Exception as exc:  # noqa: BLE001 - one readable line beats a traceback
+        print(describe_error(exc))
+        sys.exit(1)
 
 
 if __name__ == "__main__":

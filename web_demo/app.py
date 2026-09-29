@@ -21,6 +21,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from pydantic import BaseModel
 
 from agent.agent import DEFAULT_MCP_URL, BusinessAgent
+from agent.llm import describe_error
 from mcp_server.config import bootstrap
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -59,10 +60,11 @@ async def ask(request: AskRequest) -> dict[str, Any]:
     try:
         return await _agent.ask(request.text, session_id=request.session_id)
     except Exception as exc:  # noqa: BLE001 - reported to the UI
+        reason = describe_error(exc)
         return {
-            "reply": f"I could not complete that: {exc}",
+            "reply": f"I could not complete that. {reason}",
             "trace": [],
-            "error": str(exc),
+            "error": reason,
         }
 
 

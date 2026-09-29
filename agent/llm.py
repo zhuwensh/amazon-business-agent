@@ -35,6 +35,21 @@ class LLMError(RuntimeError):
     """Raised when the configured model backend cannot be used."""
 
 
+def describe_error(exc: BaseException) -> str:
+    """Return the real cause of an error, unwrapping anyio task-group wrappers.
+
+    An exception raised inside an MCP client session comes back as an
+    `ExceptionGroup` that reads like "unhandled errors in a TaskGroup
+    (1 sub-exception)" — useless to a user. The interesting part is the innermost
+    exception, which is usually a plain, actionable message.
+    """
+    while getattr(exc, "exceptions", None):
+        exc = exc.exceptions[0]
+    if isinstance(exc, LLMError):
+        return str(exc)
+    return f"{type(exc).__name__}: {exc}"
+
+
 def build_backend() -> "Backend":
     provider = (os.environ.get("LLM_PROVIDER") or "openai").strip().lower()
     if provider == "bedrock":
