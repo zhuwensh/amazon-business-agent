@@ -17,6 +17,8 @@ import os
 from dataclasses import dataclass, field
 from typing import Any, Sequence
 
+DEFAULT_BEDROCK_MODEL = "anthropic.claude-3-5-sonnet-20241022-v2:0"
+
 
 @dataclass
 class ToolCall:
@@ -116,18 +118,32 @@ class BedrockBackend(Backend):
 
     def __init__(self) -> None:
         try:
-            import boto3  # noqa: F401
+            import boto3
         except ImportError as exc:  # pragma: no cover - environment dependent
             raise LLMError("LLM_PROVIDER=bedrock needs boto3: pip install boto3") from exc
 
-        import boto3
+        # Credentials: the same layout the SmartSales-AI project uses — keep the
+        # profile file inside the repo folder and point boto3 at it explicitly, so
+        # the demo is self-contained instead of depending on ambient state. The
+        # file itself must never be committed.
+        credentials_file = (os.environ.get("AWS_SHARED_CREDENTIALS_FILE") or "").strip()
+        profile = (os.environ.get("AWS_PROFILE") or "").strip()
+        region = (
+            os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "us-east-1"
+        ).strip()
 
-        self._client = boto3.client(
-            "bedrock-runtime",
-            region_name=(os.environ.get("AWS_REGION") or "us-east-1").strip(),
-        )
+        if credentials_file:
+            if not os.path.exists(credentials_file):
+                raise LLMError(
+                    f"AWS_SHARED_CREDENTIALS_FILE points at a file that does not exist: "
+                    f"{credentials_file}"
+                )
+            os.environ.setdefault("AWS_SHARED_CREDENTIALS_FILE", credentials_file)
+
+        session = boto3.Session(profile_name=profile or None, region_name=region)
+        self._client = session.client("bedrock-runtime", region_name=region)
         self._model = (
-            os.environ.get("BEDROCK_MODEL_ID") or "anthropic.claude-3-5-sonnet-20241022-v2:0"
+            os.environ.get("BEDROCK_MODEL_ID") or DEFAULT_BEDROCK_MODEL
         ).strip()
 
     def complete(self, system, messages, tools) -> ModelReply:

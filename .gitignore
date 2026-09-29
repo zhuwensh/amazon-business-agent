@@ -1,6 +1,9 @@
 # Secrets — never commit these
 .env
 *.env.local
+.aws/
+**/.aws/
+*.pem
 
 # Python
 __pycache__/
