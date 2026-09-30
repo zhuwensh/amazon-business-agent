@@ -198,6 +198,47 @@ and reports the negotiated protocol version.
 | `MCP_HTTP`, `MCP_HOST`, `MCP_PORT`, `MCP_URL` | MCP server transport and client target |
 | `WEB_PORT` | Simulator port |
 
+### Running the agent on Amazon Bedrock (AWS Builder mini challenge)
+
+Set `LLM_PROVIDER=bedrock`. Credentials follow the layout used by the
+[SmartSales-AI](https://github.com/zhuwensh/SmartSales-AI) project, so the demo is
+self-contained instead of depending on machine-level state:
+
+1. In the AWS console, pick a region and enable access to the model under
+   **Amazon Bedrock → Model access**. Model access is **per region**.
+2. Create an IAM user with `bedrock:InvokeModel` and
+   `bedrock:InvokeModelWithResponseStream` (the Converse API is authorised by
+   `InvokeModel`), and generate an access key.
+3. Put the credentials in the repository folder — `.aws/` is git-ignored:
+
+   ```ini
+   # .aws/credentials
+   [default]
+   aws_access_key_id = ...
+   aws_secret_access_key = ...
+   ```
+
+4. Point `.env` at it:
+
+   ```ini
+   LLM_PROVIDER=bedrock
+   AWS_REGION=ap-northeast-1
+   BEDROCK_MODEL_ID=openai.gpt-oss-20b-1:0
+   AWS_PROFILE=default
+   AWS_SHARED_CREDENTIALS_FILE=./.aws/credentials
+   ```
+
+5. Check it before trusting it:
+
+   ```bash
+   python scripts/check_bedrock.py
+   ```
+
+   The script verifies credentials, a plain Converse call, **and tool calling** —
+   the last one matters because an agent loop that never receives a `toolUse`
+   block is not an agent. If the model answers without calling the tool, change
+   `BEDROCK_MODEL_ID`; no code changes are needed.
+
 ## Security
 
 Never commit `STRIPE_API_KEY`, `SLACK_WEBHOOK_URL` or `LLM_API_KEY`. `.env` is
