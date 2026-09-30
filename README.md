@@ -23,9 +23,18 @@ host.
 | `skills/` | Agent Skill package — the track's other sanctioned artifact, alongside the MCP server |
 | `demo/` | Test-data seeding for a stable demo |
 | `tests/` | Offline unit tests for the business rules and voice phrasing |
-| `docs/` | Architecture and demo script |
+| `docs/` | Architecture, demo script, Devpost answers, submission checklist |
 | `FRICTION_LOG.md` | Friction log kept while building (submission bonus field) |
 | `PRODUCT_FEEDBACK.md` | Required product feedback for every tool used |
+
+## Submission materials
+
+| Artifact | File |
+|---|---|
+| Devpost answers, paste-ready | [docs/DEVPOST_SUBMISSION.md](docs/DEVPOST_SUBMISSION.md) |
+| What is left to do before the deadline | [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
+| Product feedback, one section per tool used | [PRODUCT_FEEDBACK.md](PRODUCT_FEEDBACK.md) |
+| Friction log (submission bonus field) | [FRICTION_LOG.md](FRICTION_LOG.md) |
 
 ## Protocol compliance (Alexa+ track)
 

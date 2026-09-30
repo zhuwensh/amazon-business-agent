@@ -190,31 +190,78 @@ behaviour is settled.
 
 ## 6. Stripe API (test mode)
 
-**Used for:** `TODO` — customer lookup, invoice listing, overdue detection,
-reminder delivery.
+**Used for:** reading (customer lookup, invoice listing, overdue detection) and
+one write — emailing a customer their invoice as a payment reminder. Test mode
+only.
 
-**What worked well:** `TODO`
+**What worked well:** test mode is a real sandbox rather than a simulation: the
+same objects, the same validation, the same error shapes, so a demo built on it is
+honest about what it proves. `hosted_invoice_url` hands you a payable link for
+free, which is what makes a reminder useful without building any payment UI.
+Invoice numbers are human-friendly, which matters more than expected for a voice
+assistant — the model can say "invoice O3RSQJ1Z-0004" and it means something. And
+the errors name the offending parameter precisely: being told that `due_date`
+"expects a unix timestamp representing a date and time in the future, you specified
+1789128000, which is in the past" is a complete diagnosis in one line.
 
-**What needs work:** `TODO`
+**What needs work:** three things cost real time here.
 
-**Onboarding:** `TODO`
+First, an invoice cannot be created *or* updated with a due date in the past, which
+means a fresh test account cannot be given an overdue invoice at all. "Show me what
+is late" is a natural first question for a collections tool, and there is no
+straightforward way to make that state exist. The supported answer is test clocks,
+which brings the second problem.
 
-**Would I build with it again:** `TODO`
+Second, objects on a test clock are invisible to the account-wide list endpoints.
+`GET /v1/customers` accepts a `test_clock` filter, but `GET /v1/invoices` does not
+accept one and does not return clock invoices either — so the only way to read them
+is customer by customer. That inconsistency is what makes the workaround expensive.
+
+Third, adding an invoice item implicitly creates a draft invoice. Calling
+`POST /v1/invoices` afterwards therefore produces a *second*, empty invoice which
+finalizes as a zero-amount **paid** one. Nothing errors; the only symptom is a
+strange paid invoice in the account, and the real invoice silently has no lines.
+`pending_invoice_items_behavior=include` is the fix, but it has to be discovered.
+
+**Onboarding:** excellent. A test key and a few calls, and the dashboard is the
+same interface as live mode, so there was nothing new to learn.
+
+**Would I build with it again:** yes. Being able to reach a real, correct, payable
+invoice from a few lines of code is what makes this project's workflow plausible
+rather than a mock.
 
 ---
 
 ## 7. Slack API
 
-**Used for:** `TODO` — outbound notification to a finance channel as the final step
-of a multi-step workflow.
+**Used for:** one outbound action — posting the outcome of a chase to the finance
+channel as the final step of a multi-step workflow — through an Incoming Webhook.
 
-**What worked well:** `TODO`
+**What worked well:** an Incoming Webhook is the right shape for this job. It needs
+no OAuth install, no bot user, no scopes and no OAuth scopes screen; the app can be
+a blank app with every other feature switched off, and the whole thing is one URL.
+That keeps the permission story trivial to explain: this integration can post to
+one channel and can do nothing else. Onboarding took minutes, and the message
+arrived in the channel on the first attempt.
 
-**What needs work:** `TODO`
+**What needs work:** the webhook is bound to whichever channel was chosen when it
+was created, and the API gives you no way to read that back — a successful post
+returns `ok` and nothing else. Any application that *speaks* the destination has to
+keep its own copy of the channel name in configuration, which can silently drift
+from the truth: the assistant would cheerfully say "I posted to #finance" while the
+message landed somewhere else, and no error would ever surface. We ended up
+treating the webhook as the source of truth and the configured name as a display
+label only, documented in the code — but a `channel` field in the response, or a
+read-only way to ask a webhook where it points, would remove that whole class of
+bug.
 
-**Onboarding:** `TODO`
+**Onboarding:** fast and uneventful. Creating a blank app, enabling Incoming
+Webhooks, and picking a channel was the entire setup.
 
-**Would I build with it again:** `TODO`
+**Would I build with it again:** yes for one-way notifications, which is most of
+what a notification is. Anything that needs to read messages or respond to events
+would need the full app and OAuth flow, and that trade-off is worth making
+explicitly rather than by default.
 
 ---
 
