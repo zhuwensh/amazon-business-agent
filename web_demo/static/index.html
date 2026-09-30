@@ -7,41 +7,55 @@
   <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <header>
+  <header class="topbar">
     <div class="brand">
-      <span class="dot"></span>
-      <h1>BusinessFlow Agent</h1>
-      <span class="subtitle">simulated Alexa+ experience &middot; MCP over Streamable HTTP</span>
+      <span class="dot" id="dot"></span>
+      <span class="name">BusinessFlow Agent</span>
     </div>
     <div class="status" id="status">connecting…</div>
   </header>
 
-  <main>
-    <section class="stage">
-      <button id="mic" class="orb" aria-label="Hold to talk">
-        <span class="ring"></span>
-        <span class="label">Talk</span>
-      </button>
-      <p class="hint" id="hint">Press the orb and ask a question, or type below.</p>
+  <main class="device">
+    <p class="lead" id="lead">Tap the orb and ask a question.</p>
 
-      <div class="transcript" id="transcript"></div>
+    <button id="orb" class="orb" aria-label="Tap to speak">
+      <span class="pulse"></span>
+      <span class="orb-label" id="orbLabel">Tap to speak</span>
+    </button>
 
-      <form class="composer" id="composer">
-        <input id="input" type="text" autocomplete="off"
-               placeholder="Does Acme have anything overdue?" />
-        <button type="submit">Send</button>
-        <button type="button" id="reset" class="ghost">Reset</button>
-      </form>
-    </section>
+    <div class="caption-block">
+      <p class="heard" id="heard"></p>
+      <p class="answer" id="answer"></p>
+    </div>
 
-    <aside class="trace-panel">
-      <h2>Tool trace</h2>
-      <p class="muted">The agent chooses these calls — they are not scripted.</p>
+    <div class="meta">
+      <span id="latency" class="pill hidden"></span>
+      <button type="button" id="retry" class="pill ghost hidden">Say that again</button>
+      <button type="button" id="restart" class="pill ghost">Start over</button>
+      <button type="button" id="typeToggle" class="pill ghost">Type instead</button>
+    </div>
+
+    <form class="composer hidden" id="composer">
+      <input id="input" type="text" autocomplete="off" placeholder="Type the request" />
+      <button type="submit">Send</button>
+    </form>
+
+    <p class="footnote">
+      Voice in, voice out. This is a self-built stand-in for the Alexa+ Web Simulator,
+      which is not available to hackathon participants — the MCP server behind it is the submission.
+    </p>
+  </main>
+
+  <aside class="diagnostics" id="diagnostics">
+    <button class="diag-toggle" id="diagToggle" type="button">How it works</button>
+    <div class="diag-body hidden" id="diagBody">
+      <h2>Tool calls</h2>
+      <p class="muted">Chosen by the agent, in this order — nothing is scripted.</p>
       <div id="trace" class="trace"></div>
       <h2>MCP tools discovered</h2>
       <ul id="tools" class="tools"></ul>
-    </aside>
-  </main>
+    </div>
+  </aside>
 
   <script src="/static/app.js"></script>
 </body>

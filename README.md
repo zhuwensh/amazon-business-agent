@@ -20,6 +20,7 @@ host.
 | `mcp_server/` | Self-hosted MCP server (FastMCP, Streamable HTTP) exposing five business tools |
 | `agent/` | Agent loop: plan → call tool → observe → speak |
 | `web_demo/` | Browser-based simulated Alexa+ experience (voice in, voice out, tool trace) |
+| `skills/` | Agent Skill package — the track's other sanctioned artifact, alongside the MCP server |
 | `demo/` | Test-data seeding for a stable demo |
 | `tests/` | Offline unit tests for the business rules and voice phrasing |
 | `docs/` | Architecture and demo script |
@@ -46,6 +47,45 @@ PASS: session initialized, protocol 2025-11-25
 PASS: 5 tools exposed: find_customer, get_cashflow_summary, get_overdue_invoices,
                        notify_finance_team, send_payment_reminder
 ```
+
+## Agent Skill
+
+The track accepts **either** a self-hosted MCP server **or** an Agent Skill. This
+repository ships both, because they carry different halves of the work:
+
+| Artifact | Carries |
+|---|---|
+| MCP server (`mcp_server/`) | the capability — Stripe and Slack behind five business-level tools |
+| Agent Skill (`skills/cash-collection/`) | the behaviour — how to chase an invoice over voice, when to stop and ask, how to phrase the answer |
+
+The skill is a portable folder following the [Agent Skills](https://agentskills.io)
+format: `SKILL.md` plus a `references/` catalogue of the tools. Any
+skills-compatible host that can reach the MCP server inherits the same conduct —
+the confirmation rule, the spoken-output rules, the disambiguation rule — instead
+of re-deriving them.
+
+## Designed to the Alexa+ add-on contract
+
+The Alexa+ add-on runtime is not available to hackathon participants
+([FRICTION_LOG.md](FRICTION_LOG.md), Entry 001), so this project targets the
+*add-on contract* — what a voice add-on has to do to be usable — rather than the
+add-on runtime. Every row is checkable in this repository.
+
+| Requirement of a voice add-on | How it is met | Where |
+|---|---|---|
+| Answers must be speakable, not printed data | every tool returns `spoken` next to `data` | `mcp_server/messages.py` |
+| Never read identifiers aloud | invoice *numbers* only, never ids | `mcp_server/business_rules.py` (`invoice_reference`), `agent/prompts.py` |
+| Consequential actions need explicit consent | the tool itself refuses until `confirmed=true` — enforcement is server-side, not prompt-side | `mcp_server/server.py` |
+| Ambiguous names are resolved with the user, never guessed | fuzzy match against stored customers, then a question | `mcp_server/business_rules.py`, `mcp_server/server.py` (`_resolve_customer`) |
+| Failures are spoken in plain language | task-group wrappers are unwrapped into one actionable sentence | `agent/llm.py` (`describe_error`), `agent/prompts.py` |
+| Follow-ups work without repeating context | conversation history per session, trimmed | `agent/agent.py` |
+| A turn has to finish quickly | bounded Stripe queries; the simulator measures and displays the wait | `mcp_server/stripe_tools.py`, `web_demo/static/app.js` |
+| The user can interrupt the assistant | talking over it cancels speech and starts listening | `web_demo/static/app.js` (barge-in) |
+| Mishearing is recoverable | "I didn't catch that" plus one-tap retry | `web_demo/static/app.js` |
+
+What we would build with Preview access, for the record: the add-on runtime would
+replace `web_demo/` and nothing else. The MCP server, the tool contracts and the
+Agent Skill stay as they are, because that is where the work is.
 
 ## Architecture
 
