@@ -67,6 +67,19 @@ def spoken_disambiguation(candidates: Sequence[dict[str, Any]]) -> str:
     return f"I found more than one match: {' or '.join(names)}. Which one did you mean?"
 
 
+def spoken_customer_found(candidates: Sequence[dict[str, Any]]) -> str:
+    """A statement when the match is unambiguous; only ask when it is not.
+
+    Asking "is that the one?" after an exact, single match makes the assistant
+    hesitate on every request — the user said a name, and the name was found.
+    """
+    if not candidates:
+        return "I could not find that customer."
+    if len(candidates) == 1:
+        return f"Found {rules.customer_display_name(candidates[0])}."
+    return spoken_disambiguation(candidates)
+
+
 def spoken_reminder_sent(
     customer_name: str, invoice_reference: str, amount_minor: int | None, currency: str | None
 ) -> str:

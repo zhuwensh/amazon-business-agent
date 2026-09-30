@@ -1,5 +1,6 @@
 # Secrets — never commit these
 .env
+.hackathon2026_accessKeys.csv
 *.env.local
 .aws/
 **/.aws/

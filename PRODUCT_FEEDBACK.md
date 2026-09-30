@@ -132,18 +132,59 @@ no entry point.
 
 ## 5. AWS (Bedrock / Strands Agents SDK / AgentCore) — AWS Builder mini challenge
 
-**Used for:** `TODO` — planned: the agent's reasoning loop and model inference, with
-documented integration points. The hackathon FAQ notes that Bedrock resources do
-not need to run continuously until judging (Nov 9-20) and recommends stubbing calls
-during early development, which is the plan.
+**Used for:** the agent's reasoning loop. Every turn — which tool to call, in what
+order, how to phrase the spoken answer — goes through Amazon Bedrock's Converse API
+with `toolConfig`, from a local boto3 client (`bedrock-runtime`,
+`ap-northeast-1`, `openai.gpt-oss-20b-1:0`, IAM permissions scoped to that single
+model's ARN).
 
-**What worked well:** `TODO`
+**What worked well:** Converse is the right surface for an agent. Tool definitions
+and the `toolUse` / `toolResult` round trip use the same request shape as any other
+message, so swapping models is a config change rather than a code change — which
+is exactly what an agent loop needs. Tool calling worked on the first attempt once
+the configuration was right: the model asked for `get_overdue_invoices` with
+correct arguments, unprompted. Multi-turn orchestration also held up — a follow-up
+"send them a reminder and tell finance" was carried out over two further turns,
+with the write action gated behind an explicit confirmation. Credentials through
+boto3's standard chain plus `AWS_SHARED_CREDENTIALS_FILE` made the project
+self-contained. When something was wrong, the error text named the exact action and
+resource ARN, which is what made the problem findable.
 
-**What needs work:** `TODO`
+**What needs work:** the model card is the wrong granularity for the decision that
+matters most. "Does this model support tool calling?" is answered by a features
+table organised by endpoint, where tool calling appears under `bedrock-mantle` and
+is absent from `bedrock-runtime` — even though `bedrock-runtime` + Converse does
+support it. We could not settle that question from the documentation and had to
+establish it empirically with a test call. A per-model, per-API capability matrix
+(model × API × feature) would remove the guesswork.
 
-**Onboarding:** `TODO`
+Second, one error type covers three unrelated causes. `AccessDeniedException` is
+returned for (a) no identity-based policy covering the action, (b) model access not
+granted, and (c) the account still being verified — each needing a completely
+different fix. A stable `reason` field, or a distinct error code per cause, would
+have saved a diagnostic cycle.
 
-**Would I build with it again:** `TODO`
+Third, the region is encoded in three places that must agree — the console where
+model access was granted, the resource ARN in the IAM policy, and the client's
+region — and nothing checks that they do. In our case a duplicated region setting
+silently overrode the intended one, and the resulting denial was indistinguishable
+from a permissions mistake. Model access is also still a per-region console step,
+which is easy to do in the wrong region.
+
+**Onboarding:** the console path — model access, then an IAM user with
+`bedrock:InvokeModel`, then an access key — is short and needed no documentation.
+Getting the first successful call took a while, but almost none of it was spent on
+the SDK: it went to the account verification wait and to resolving the
+region-versus-policy-ARN mismatch. Installing boto3 and calling Converse was a
+one-step experience.
+
+**Would I build with it again:** yes. Converse with tool use is a clean substrate
+for an agent, and for a demo this size the cost is negligible. Two things would
+make it materially faster next time: the per-API capability matrix, and distinct
+error codes for the three flavors of `AccessDeniedException`. Note also that the
+hackathon FAQ's advice to stub model calls during early development was correct and
+worth following — the first working configuration is not needed until the agent
+behaviour is settled.
 
 ---
 

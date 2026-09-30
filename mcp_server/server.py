@@ -100,7 +100,12 @@ def find_customer(query: str) -> dict[str, Any]:
             for c in candidates
         ]
     }
-    spoken = messages.spoken_disambiguation(candidates)
+    confident = candidates[0]["match_score"] >= 0.95 or len(candidates) == 1
+    spoken = (
+        messages.spoken_customer_found(candidates)
+        if confident
+        else messages.spoken_disambiguation(candidates)
+    )
     return _ok(payload, spoken)
 
 

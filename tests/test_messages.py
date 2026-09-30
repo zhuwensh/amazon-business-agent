@@ -83,6 +83,15 @@ class ActionPhrasingTests(unittest.TestCase):
         self.assertIn("Acme Corp", spoken)
         self.assertIn("Which one", spoken)
 
+    def test_single_confident_match_is_a_statement_not_a_question(self):
+        spoken = messages.spoken_customer_found([{"id": "cus_1", "name": "Acme Corp"}])
+        self.assertEqual(spoken, "Found Acme Corp.")
+        self.assertNotIn("?", spoken)
+
+    def test_confident_match_still_asks_when_there_are_several(self):
+        candidates = [{"id": "cus_1", "name": "Acme Corp"}, {"id": "cus_2", "name": "Acme Ltd"}]
+        self.assertIn("Which one", messages.spoken_customer_found(candidates))
+
 
 class SlackTextTests(unittest.TestCase):
     def test_detail_lines_show_reference_amount_and_age(self):
