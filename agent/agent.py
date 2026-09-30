@@ -14,6 +14,7 @@ import argparse
 import asyncio
 import json
 import os
+import re
 import sys
 from typing import Any, Sequence
 
@@ -28,6 +29,24 @@ from .llm import Backend, ModelReply, build_backend, describe_error
 DEFAULT_MCP_URL = "http://127.0.0.1:8000/mcp"
 MAX_TOOL_ROUNDS = 6
 MAX_HISTORY_TURNS = 12
+
+TOOL_NAME_PATTERN = re.compile(r"^[a-zA-Z0-9_-]+$")
+
+
+def clean_tool_name(raw: str) -> str:
+    """Normalise a tool name the model produced.
+
+    gpt-oss models render their own response format, and its control tokens leak:
+    a call for `notify_finance_team` can arrive as
+    `notify_finance_team<|channel|>commentary`. Converse accepts that on the way
+    out but rejects it on the way back in — every later request in the conversation
+    then fails validation — so the name is normalised as soon as it is received,
+    before it reaches the history or the MCP server.
+
+    Returns an empty string when nothing usable is left.
+    """
+    name = (raw or "").split("<")[0].strip()
+    return name if TOOL_NAME_PATTERN.match(name) else ""
 
 
 def _mcp_tool_to_openai(tool: Any) -> dict[str, Any]:
@@ -96,6 +115,19 @@ class BusinessAgent:
                     if not reply.tool_calls:
                         break
 
+                    # Normalise before the name reaches the history or the server.
+                    for call in reply.tool_calls:
+                        call.name = clean_tool_name(call.name)
+
+                    if any(not call.name for call in reply.tool_calls):
+                        # A name that cannot be normalised cannot be sent back to
+                        # Converse either, so end the turn instead of poisoning the
+                        # conversation with an invalid toolUse block.
+                        reply = ModelReply(
+                            text="I lost track of which tool to use there. Say that again?"
+                        )
+                        break
+
                     history.append(
                         {
                             "role": "assistant",
@@ -114,11 +146,23 @@ class BusinessAgent:
                         }
                     )
                     for call in reply.tool_calls:
-                        try:
-                            raw = await session.call_tool(call.name, call.arguments)
-                            parsed = _parse_tool_result(raw)
-                        except Exception as exc:  # noqa: BLE001 - surfaced to the model
-                            parsed = {"ok": False, "spoken": f"The tool {call.name} failed: {exc}"}
+                        if call.name not in tool_names:
+                            # Never forward an unknown name: it costs a round trip and
+                            # tells the model nothing about what it should have used.
+                            parsed = {
+                                "ok": False,
+                                "error": f"There is no tool called '{call.name}'.",
+                                "available_tools": tool_names,
+                            }
+                        else:
+                            try:
+                                raw = await session.call_tool(call.name, call.arguments)
+                                parsed = _parse_tool_result(raw)
+                            except Exception as exc:  # noqa: BLE001 - surfaced to the model
+                                parsed = {
+                                    "ok": False,
+                                    "spoken": f"The tool {call.name} failed: {exc}",
+                                }
                         trace.append(prompts.trace_entry(call.name, call.arguments, parsed))
                         history.append(
                             {
