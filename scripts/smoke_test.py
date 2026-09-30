@@ -129,6 +129,24 @@ async def _check_live_scenario(session: ClientSession, query: str = "Acme") -> l
     else:
         failures.append("notify_finance_team did not require confirmation")
 
+    # Posting for real is opt-in: it puts a message in someone's channel.
+    if os.environ.get("SMOKE_TEST_SLACK") == "1":
+        delivered = await _call(
+            session,
+            "notify_finance_team",
+            {
+                "message": "BusinessFlow Agent smoke test — this message proves the "
+                "finance notification path works end to end.",
+                "confirmed": True,
+            },
+        )
+        if delivered.get("ok"):
+            _say("PASS: notify_finance_team delivered: " + str(delivered.get("spoken")))
+        else:
+            failures.append("notify_finance_team delivery failed: " + str(delivered.get("error")))
+    else:
+        _say("SKIP: real Slack delivery (set SMOKE_TEST_SLACK=1 to post a test message)")
+
     return failures
 
 
