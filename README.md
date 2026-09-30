@@ -26,6 +26,7 @@ host.
 | `docs/` | Architecture, demo script, Devpost answers, submission checklist |
 | `FRICTION_LOG.md` | Friction log kept while building (submission bonus field) |
 | `PRODUCT_FEEDBACK.md` | Required product feedback for every tool used |
+| `handoff.md` | Working handoff: what it is, where the seams are, what is still open |
 
 ## Submission materials
 
