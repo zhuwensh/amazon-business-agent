@@ -122,6 +122,22 @@ pip install -r requirements.txt
 cp .env.example .env      # then fill in STRIPE_API_KEY, SLACK_WEBHOOK_URL, LLM_API_KEY
 ```
 
+### Windows launchers
+
+On Windows, double-click these instead of typing the commands below. Each one
+uses `.venv\Scripts\python.exe` when it exists, and falls back to the `python` on
+your PATH:
+
+| File | What it does |
+|---|---|
+| `run_all.bat` | Starts both processes, waits until each port answers, then opens http://127.0.0.1:8080 |
+| `run_mcp.bat` | Starts the MCP server alone, in the foreground |
+| `run_voice.bat` | Starts the voice simulator alone, in the foreground |
+
+`run_all.bat` reuses anything already listening on `:8000` or `:8080`, so running
+it twice does not start a second copy. Close the two spawned windows to stop the
+demo.
+
 ### 1. Seed demo data (Stripe test mode)
 
 ```bash

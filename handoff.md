@@ -1,6 +1,6 @@
 # BusinessFlow Agent — handoff
 
-_Updated 2026-09-30 · HEAD `127e7ec` "Add the Devpost answers and a submission checklist"_
+_Updated 2026-10-04 . HEAD `a10cbd0` . turn-budget and Slack-verification fixes in the working tree_
 
 This is the working handoff: what the system is, where the seams are, what was
 built, and what is still open. It is also the submission repository for the
@@ -45,7 +45,7 @@ Five load-bearing rules:
 | MCP server | `python -m mcp_server.server` → `http://127.0.0.1:8000/mcp` |
 | Simulator | `python -m web_demo.app` → `http://127.0.0.1:8080` (`WEB_PORT`) |
 | Agent, one turn | `python -m agent.agent "Does Acme have anything overdue?"` |
-| Offline tests | `python -m unittest discover -s tests -v` — 31 tests, no network |
+| Offline tests | `python -m unittest discover -s tests -v` — 39 tests, no network |
 | End-to-end smoke test | `python scripts/smoke_test.py` (add `SMOKE_TEST_SLACK=1` to post for real) |
 | Bedrock configuration check | `python scripts/check_bedrock.py` — three steps, the third is tool calling |
 | Refresh demo data | `python -m demo.seed_test_data` |
@@ -53,7 +53,7 @@ Five load-bearing rules:
 Everything reads `.env` through `mcp_server.config.bootstrap()`. **Restart the
 server after an `.env` change** — nothing re-reads it live.
 
-Status at this handoff: 31 offline tests pass; the smoke test passes end to end;
+Status at this handoff: 39 offline tests pass; the smoke test passes end to end;
 the agent has been run against Bedrock and completed the full three-turn workflow,
 with a real Stripe reminder and a real Slack message.
 
@@ -145,6 +145,22 @@ rather than a transport failure.
 live in the repo folder (`.aws/` is git-ignored). `scripts/check_bedrock.py`
 verifies credentials, a plain Converse call, **and tool calling** — the last one
 because an agent loop that never receives a `toolUse` block is not an agent.
+
+### 9. A turn that ran out of budget threw away its own results
+
+`MAX_TOOL_ROUNDS` counted model rounds and stopped at 6, and the loop for...else
+replaced the whole turn with "I needed more steps than I should take" *after* the
+writes had already succeeded. A "chase both and tell finance" turn needs about
+seven rounds, so the user was told that nothing had happened while the reminders
+were going out. The loop is now bounded three ways - rounds (10), a wall-clock
+deadline (25s) and successful write actions (6) - and hitting any of them reports
+the actions that completed instead of discarding them.
+
+Same pass: `slack_tools.post_message` treated any 2xx as success. A webhook path
+that no longer exists answers HTTP 200 with an HTML help page, so a dead webhook
+read as "notified #finance" while posting nothing. It now requires the literal
+`ok` body that Slack returns for a real post.
+
 
 ## Open issues
 

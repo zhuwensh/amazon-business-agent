@@ -7,3 +7,6 @@
 *.jpeg binary
 *.ico binary
 *.pdf binary
+
+# Windows batch files must keep CRLF; cmd.exe mis-parses LF-only scripts.
+*.bat text eol=crlf

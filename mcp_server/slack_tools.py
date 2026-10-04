@@ -37,4 +37,10 @@ def post_message(text: str) -> dict[str, object]:
     response = requests.post(webhook_url(), json={"text": text}, timeout=DEFAULT_TIMEOUT)
     if response.status_code >= 300:
         raise SlackError(f"Slack webhook returned HTTP {response.status_code}: {response.text[:200]}")
+    # A successful post answers with the literal body "ok". A webhook path that no
+    # longer exists still returns HTTP 200 - with an HTML help page - so checking
+    # the status alone reports success for a message that was never posted.
+    if response.text.strip().lower() != "ok":
+        body = response.text.strip().replace("\n", " ")[:120] or "<empty>"
+        raise SlackError(f"Slack accepted the request but did not post it: {body}")
     return {"ok": True, "status": response.status_code, "channel": finance_channel()}
