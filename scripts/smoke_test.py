@@ -135,7 +135,7 @@ async def _check_live_scenario(session: ClientSession, query: str = "Acme") -> l
             session,
             "notify_finance_team",
             {
-                "message": "BusinessFlow Agent smoke test — this message proves the "
+                "message": "ChaseLine smoke test — this message proves the "
                 "finance notification path works end to end.",
                 "confirmed": True,
             },

@@ -1,4 +1,4 @@
-# BusinessFlow Agent
+# ChaseLine
 
 A self-hosted **MCP server** that turns a spoken business request into a
 multi-step workflow across Stripe and Slack — built for the

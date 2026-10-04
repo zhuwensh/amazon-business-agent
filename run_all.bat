@@ -1,6 +1,6 @@
 @echo off
 REM ---------------------------------------------------------------------
-REM  BusinessFlow Agent - start everything, then open the browser
+REM  ChaseLine - start everything, then open the browser
 REM
 REM  Opens two windows: the MCP server (:8000) and the voice simulator
 REM  (:8080).  Each one is waited on until it really accepts connections,
@@ -30,7 +30,7 @@ if not exist ".env" (
 )
 
 echo ============================================================
-echo   BusinessFlow Agent - starting the demo
+echo   ChaseLine - starting the demo
 echo ============================================================
 echo.
 
@@ -39,7 +39,7 @@ if not errorlevel 1 (
     echo [info] 127.0.0.1:8000 is already in use - reusing that MCP server.
 ) else (
     echo [1/2] Starting the MCP server ...
-    start "BusinessFlow - MCP server (:8000)" cmd /k ""%PY%" -m mcp_server.server"
+    start "ChaseLine - MCP server (:8000)" cmd /k ""%PY%" -m mcp_server.server"
     call :wait_port 8000 60
     if errorlevel 1 (
         echo [warn] The MCP server did not open port 8000 within 60 seconds.
@@ -54,7 +54,7 @@ if not errorlevel 1 (
     echo [info] 127.0.0.1:8080 is already in use - reusing that voice simulator.
 ) else (
     echo [2/2] Starting the voice simulator ...
-    start "BusinessFlow - voice simulator (:8080)" cmd /k ""%PY%" -m web_demo.app"
+    start "ChaseLine - voice simulator (:8080)" cmd /k ""%PY%" -m web_demo.app"
     call :wait_port 8080 60
     if errorlevel 1 (
         echo [warn] The voice simulator did not open port 8080 within 60 seconds.

@@ -2,7 +2,7 @@
 name: cash-collection
 description: Chases overdue invoices by voice — finds a customer, reports what is late and by how long, sends the customer a payment reminder, and notifies the finance channel. Use when someone asks who owes money, what is overdue, whether a customer has unpaid or late invoices, how much is outstanding, or asks to chase a customer, send a reminder, or tell the finance team.
 license: Apache-2.0
-compatibility: Needs the BusinessFlow MCP server (Streamable HTTP, MCP spec 2025-11-25 or later) reachable at MCP_URL, with Stripe and Slack credentials configured for that server. No screen is assumed on the user's side.
+compatibility: Needs the ChaseLine MCP server (Streamable HTTP, MCP spec 2025-11-25 or later) reachable at MCP_URL, with Stripe and Slack credentials configured for that server. No screen is assumed on the user's side.
 metadata:
   version: "1.0"
   track: amazon-developer-hackathon-2026-alexa-plus

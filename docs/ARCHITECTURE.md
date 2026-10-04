@@ -1,6 +1,6 @@
 # Architecture
 
-BusinessFlow Agent is a self-hosted MCP server that exposes business operations as
+ChaseLine is a self-hosted MCP server that exposes business operations as
 tools, plus two clients: an agent loop and a browser-based simulated Alexa+
 experience.
 

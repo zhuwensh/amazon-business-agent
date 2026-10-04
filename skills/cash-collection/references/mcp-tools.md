@@ -1,6 +1,6 @@
-# BusinessFlow MCP tools
+# ChaseLine MCP tools
 
-Reference for the `cash-collection` skill. Five tools, served by the BusinessFlow
+Reference for the `cash-collection` skill. Five tools, served by the ChaseLine
 MCP server over Streamable HTTP at `MCP_URL` (default
 `http://127.0.0.1:8000/mcp`).
 

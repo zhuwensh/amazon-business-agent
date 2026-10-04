@@ -1,3 +1,3 @@
-"""BusinessFlow Agent — agent layer."""
+"""ChaseLine — agent layer."""
 
 __all__ = ["agent", "llm", "prompts"]

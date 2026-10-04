@@ -1,4 +1,4 @@
-"""BusinessFlow Agent — self-hosted MCP server.
+"""ChaseLine — self-hosted MCP server.
 
 Business-level tools, not a raw API wrapper: the agent decides which tool to call
 and in what order. Every tool returns the structured result under `data` and a
@@ -23,7 +23,7 @@ from . import messages
 from . import slack_tools as slack
 from . import stripe_tools as stripe
 
-mcp = FastMCP("businessflow-agent")
+mcp = FastMCP("chaseline")
 
 
 def _ok(data: dict[str, Any], spoken: str) -> dict[str, Any]:
@@ -272,7 +272,7 @@ def main() -> None:
     config.bootstrap()
 
     use_http = (os.environ.get("MCP_HTTP") or "").strip().lower() in {"1", "true", "yes"}
-    print("BusinessFlow Agent - MCP server")
+    print("ChaseLine - MCP server")
     print("Tools: find_customer, get_overdue_invoices, get_cashflow_summary,")
     print("       send_payment_reminder, notify_finance_team")
 

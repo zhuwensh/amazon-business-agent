@@ -1,6 +1,6 @@
 # UAT case list
 
-Acceptance tests for BusinessFlow Agent, written so that someone who did not build
+Acceptance tests for ChaseLine, written so that someone who did not build
 it can run them. The **Covered by** column says what already guards each case
 automatically; anything marked `manual` is a human check.
 

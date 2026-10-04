@@ -1,6 +1,6 @@
 @echo off
 REM ---------------------------------------------------------------------
-REM  BusinessFlow Agent - MCP server
+REM  ChaseLine - MCP server
 REM
 REM  Serves the five business tools over Streamable HTTP on
 REM  127.0.0.1:8000/mcp.  Leave this window open while you use the voice

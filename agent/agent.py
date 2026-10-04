@@ -289,7 +289,7 @@ class BusinessAgent:
 async def _amain(argv: Sequence[str] | None = None) -> int:
     bootstrap()
 
-    parser = argparse.ArgumentParser(description="BusinessFlow Agent — CLI")
+    parser = argparse.ArgumentParser(description="ChaseLine — CLI")
     parser.add_argument("question", nargs="*", help="the request, in natural language")
     parser.add_argument("--mcp-url", default=None, help=f"default: {DEFAULT_MCP_URL}")
     args = parser.parse_args(argv)

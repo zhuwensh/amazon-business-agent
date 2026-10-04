@@ -1,6 +1,6 @@
 @echo off
 REM ---------------------------------------------------------------------
-REM  BusinessFlow Agent - simulated Alexa+ voice experience
+REM  ChaseLine - simulated Alexa+ voice experience
 REM
 REM  Serves the browser front end on http://127.0.0.1:8080 and talks to the
 REM  MCP server at 127.0.0.1:8000/mcp.  Ctrl+C stops it.

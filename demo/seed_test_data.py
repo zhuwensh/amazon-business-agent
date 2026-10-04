@@ -39,9 +39,16 @@ from mcp_server import business_rules as rules
 from mcp_server import messages
 from mcp_server import stripe_tools as stripe
 
-CLOCK_NAME = "businessflow-demo"
+CLOCK_NAME = "chaseline-demo"
 CLOCK_LOOKBACK_DAYS = 90
-DEMO_TAG = {"businessflow_demo": "true"}
+DEMO_TAG_KEY = "chaseline_demo"
+DEMO_TAG = {DEMO_TAG_KEY: "true"}
+# Clocks and invoices created before the ChaseLine rename still carry the old
+# names. Both are recognised, so a re-seed voids the previous run instead of
+# leaving it open alongside the new one - which would show four overdue invoices
+# where the demo promises two.
+LEGACY_CLOCK_NAME = "businessflow-demo"
+LEGACY_DEMO_TAG_KEYS = ("businessflow_demo",)
 
 DEMO_CUSTOMERS = {
     "acme": {"name": "Acme Corp", "email": "billing@acme.example"},
@@ -78,7 +85,7 @@ def _get_or_create_clock() -> str:
         return configured
 
     for clock in stripe.list_test_clocks():
-        if clock.get("name") == CLOCK_NAME and clock.get("status") == "ready":
+        if clock.get("name") in (CLOCK_NAME, LEGACY_CLOCK_NAME) and clock.get("status") == "ready":
             print(f"  reusing test clock {clock['id']}")
             _remember_clock(clock["id"])
             return clock["id"]
@@ -109,9 +116,12 @@ def _remember_clock(clock_id: str) -> None:
 
 
 def _reset_previous_demo_invoices() -> int:
+    """Void whatever a previous run created, under the current tag or the old one."""
+    keys = (DEMO_TAG_KEY, *LEGACY_DEMO_TAG_KEYS)
     voided = 0
     for invoice in stripe.list_open_invoices(limit=100):
-        if (invoice.get("metadata") or {}).get("businessflow_demo") == "true":
+        metadata = invoice.get("metadata") or {}
+        if any(metadata.get(key) == "true" for key in keys):
             stripe.void_invoice(invoice["id"])
             voided += 1
     return voided

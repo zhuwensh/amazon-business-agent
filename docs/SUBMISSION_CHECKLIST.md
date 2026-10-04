@@ -14,7 +14,7 @@ during that window — spin Bedrock up when testing and tear it down afterwards.
 
 | Item | Evidence |
 |---|---|
-| Repository public, Apache-2.0 | `github.com/zhuwensh/amazon-business-agent`, no collaborator invitations needed |
+| Repository public, Apache-2.0 | `github.com/zhuwensh/chaseline`, no collaborator invitations needed |
 | Alexa+ track requirement: self-hosted MCP server, spec 2025-11-25+, Streamable HTTP | `scripts/smoke_test.py` prints the negotiated protocol version |
 | Track technology actually used in code | `mcp_server/server.py` runs FastMCP over `transport="http"`; both clients use `mcp.client.streamable_http` |
 | Second sanctioned artifact: Agent Skill | `skills/cash-collection/SKILL.md` + tool reference |
@@ -95,7 +95,7 @@ AWS and Slack; it is git-ignored, and it should stay that way.
 | Project description | `DEVPOST_SUBMISSION.md` → Project description |
 | Pre-existing project explanation | `DEVPOST_SUBMISSION.md` → Did your project exist before… |
 | Demo video URL | record, upload, paste |
-| Code repository URL | `github.com/zhuwensh/amazon-business-agent` |
+| Code repository URL | `github.com/zhuwensh/chaseline` |
 | Product feedback | `PRODUCT_FEEDBACK.md` |
 | Friction log (optional) | `FRICTION_LOG.md` |
 | Feature requests (optional) | end of `PRODUCT_FEEDBACK.md` |

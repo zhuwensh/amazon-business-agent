@@ -1,6 +1,6 @@
 # Product Feedback — Amazon Developer Hackathon 2026
 
-Project: BusinessFlow Agent (working title) — a self-hosted MCP server for
+Project: ChaseLine — a self-hosted MCP server for
 natural-language business operations (invoices, payments, team notification).
 
 Track: **Alexa+** · Mini challenges: **AWS Builder**, **Open Source**

@@ -159,7 +159,7 @@ spoken confirmation. No mockups.
 
 ## Code repository
 
-`https://github.com/zhuwensh/amazon-business-agent` — public, Apache-2.0, so no
+`https://github.com/zhuwensh/chaseline` — public, Apache-2.0, so no
 collaborator invitations are needed. The track's required technology is visible in
 code: `mcp_server/server.py` starts a FastMCP server over Streamable HTTP, and both
 `agent/agent.py` and `web_demo/app.py` connect with

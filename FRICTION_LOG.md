@@ -1,6 +1,6 @@
 # Friction Log — Amazon Developer Hackathon 2026
 
-Project: BusinessFlow Agent (working title) — a self-hosted MCP server that turns
+Project: ChaseLine — a self-hosted MCP server that turns
 natural-language business requests into multi-step invoice, payment and
 team-communication workflows. Built on an existing Stripe/Slack integration.
 

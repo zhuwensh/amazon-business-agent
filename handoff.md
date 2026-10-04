@@ -1,6 +1,6 @@
-# BusinessFlow Agent — handoff
+# ChaseLine — handoff
 
-_Updated 2026-10-04 . HEAD `a10cbd0` . turn-budget and Slack-verification fixes in the working tree_
+_Updated 2026-10-04 . HEAD `8766bc3` . renamed to ChaseLine (uncommitted), repo at github.com/zhuwensh/chaseline_
 
 This is the working handoff: what the system is, where the seams are, what was
 built, and what is still open. It is also the submission repository for the

@@ -26,7 +26,7 @@ from mcp_server.config import bootstrap
 
 STATIC_DIR = Path(__file__).parent / "static"
 
-app = FastAPI(title="BusinessFlow Agent — simulated Alexa+ experience")
+app = FastAPI(title="ChaseLine — simulated Alexa+ experience")
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _agent = BusinessAgent(mcp_url=(os.environ.get("MCP_URL") or DEFAULT_MCP_URL).strip())
@@ -80,7 +80,7 @@ def main() -> None:
     bootstrap()
 
     port = int((os.environ.get("WEB_PORT") or "8080").strip() or "8080")
-    print(f"BusinessFlow Agent simulator: http://127.0.0.1:{port}")
+    print(f"ChaseLine simulator: http://127.0.0.1:{port}")
     print(f"MCP server expected at: {_agent.mcp_url}")
     uvicorn.run(app, host="127.0.0.1", port=port, log_level="info")
 
