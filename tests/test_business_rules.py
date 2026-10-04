@@ -122,5 +122,51 @@ class MatchingTests(unittest.TestCase):
         self.assertEqual(rules.match_customers("Umbrella", self.CUSTOMERS), [])
 
 
+
+
+class GroupOverdueByCustomerTests(unittest.TestCase):
+    """The "who owes us" rollup: an account-wide answer has to name the customers."""
+
+    def test_groups_per_customer_and_orders_by_size(self):
+        invoices = [
+            {**invoice(180000, due_in_days=-23, number="A-1"), "customer": "cus_acme"},
+            {**invoice(140000, due_in_days=-11, number="A-2"), "customer": "cus_acme"},
+            {**invoice(60000, due_in_days=-16, number="I-1"), "customer": "cus_initech"},
+            {**invoice(50000, due_in_days=5, number="F-1"), "customer": "cus_future"},
+        ]
+        customers = {
+            "cus_acme": {"id": "cus_acme", "name": "Acme Corp"},
+            "cus_initech": {"id": "cus_initech", "name": "Initech LLC"},
+        }
+
+        rows = rules.group_overdue_by_customer(invoices, customers, NOW)
+
+        self.assertEqual([row["customer"] for row in rows], ["Acme Corp", "Initech LLC"])
+        self.assertEqual(rows[0]["total_minor"], 320000)
+        self.assertEqual(rows[0]["overdue_count"], 2)
+        self.assertEqual(rows[0]["oldest_days"], 23)
+        self.assertEqual(rows[1]["total_minor"], 60000)
+
+    def test_missing_customer_record_still_yields_a_row(self):
+        invoices = [{**invoice(60000, due_in_days=-5, number="X-1"), "customer": "cus_gone"}]
+
+        rows = rules.group_overdue_by_customer(invoices, {}, NOW)
+
+        self.assertEqual(rows[0]["customer_id"], "cus_gone")
+        self.assertEqual(rows[0]["customer"], "that customer")
+        self.assertEqual(rows[0]["total_minor"], 60000)
+
+    def test_mixed_currency_customer_has_no_single_total(self):
+        invoices = [
+            {**invoice(1000, currency="usd", due_in_days=-3, number="M-1"), "customer": "cus_mix"},
+            {**invoice(2000, currency="jpy", due_in_days=-4, number="M-2"), "customer": "cus_mix"},
+        ]
+
+        rows = rules.group_overdue_by_customer(invoices, {"cus_mix": {"id": "cus_mix", "name": "Mixed Co"}}, NOW)
+
+        self.assertIsNone(rows[0]["total_minor"])
+        self.assertIsNone(rows[0]["currency"])
+        self.assertEqual(rows[0]["totals_by_currency"], {"usd": 1000, "jpy": 2000})
+
 if __name__ == "__main__":
     unittest.main()

@@ -36,6 +36,7 @@ host.
 | What is left to do before the deadline | [docs/SUBMISSION_CHECKLIST.md](docs/SUBMISSION_CHECKLIST.md) |
 | Product feedback, one section per tool used | [PRODUCT_FEEDBACK.md](PRODUCT_FEEDBACK.md) |
 | Friction log (submission bonus field) | [FRICTION_LOG.md](FRICTION_LOG.md) |
+| UAT case list, to run by hand | [docs/UAT_CASES.md](docs/UAT_CASES.md) |
 
 ## Protocol compliance (Alexa+ track)
 
@@ -182,7 +183,7 @@ python -m agent.agent "Does Acme have anything overdue?"
 |---|---|---|
 | `find_customer` | read | Resolve a spoken name to a Stripe customer, with fuzzy candidates |
 | `get_overdue_invoices` | read | Overdue invoices for a customer: amounts, days overdue, payment links |
-| `get_cashflow_summary` | read | Outstanding and overdue totals across the account |
+| `get_cashflow_summary` | read | Outstanding and overdue totals, and which customers owe the money |
 | `send_payment_reminder` | write | Email the customer their invoice |
 | `notify_finance_team` | write | Post the outcome to the finance Slack channel |
 

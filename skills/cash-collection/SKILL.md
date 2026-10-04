@@ -37,6 +37,11 @@ named. It returns ranked candidates with a match score.
   real companies: guessing here means one of them gets a demand for money that was
   not theirs.
 
+**1b. Nobody named.** If the user asks who owes money without naming a company,
+call `get_cashflow_summary` and read back the customers it lists, with what each
+one owes. Never ask for a name the user has no way of knowing: they cannot name a
+customer they were never told about.
+
 **2. Read what is late.** Call `get_overdue_invoices` with the resolved customer.
 Use the returned `spoken` sentence as the basis of your reply; it is already
 written for speech.

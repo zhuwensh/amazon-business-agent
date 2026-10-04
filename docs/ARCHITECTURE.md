@@ -63,7 +63,7 @@ host.
 |---|---|---|
 | `find_customer` | read | Resolve a spoken name to a customer (fuzzy match, returns candidates) |
 | `get_overdue_invoices` | read | Overdue invoices for a customer, with amounts, days overdue and payment links |
-| `get_cashflow_summary` | read | Workspace-wide outstanding / overdue totals |
+| `get_cashflow_summary` | read | Workspace-wide outstanding / overdue totals, and who owes them |
 | `send_payment_reminder` | write | Email the customer their invoice (Stripe `invoices/{id}/send`) |
 | `notify_finance_team` | write | Post the outcome to the finance Slack channel |
 

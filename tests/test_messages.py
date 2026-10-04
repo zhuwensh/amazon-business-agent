@@ -113,5 +113,51 @@ class SlackTextTests(unittest.TestCase):
         self.assertIn("two overdue invoices", text)
 
 
+
+
+class CashflowSummaryTests(unittest.TestCase):
+    """The account-wide answer has to name who owes money, not just report totals."""
+
+    def _customer(self, name, minor):
+        return {
+            "customer": name,
+            "currency": "usd",
+            "total_minor": minor,
+            "totals_by_currency": {"usd": minor},
+        }
+
+    def test_names_every_customer(self):
+        spoken = messages.spoken_cashflow_summary(
+            5,
+            summary(3, 380000),
+            [self._customer("Acme Corp", 320000), self._customer("Initech LLC", 60000)],
+        )
+
+        self.assertEqual(
+            spoken,
+            "5 invoices are open. Three are overdue, totalling $3,800.00: "
+            "Acme Corp owes $3,200.00 and Initech LLC owes $600.00.",
+        )
+        self.assertNotIn("cus_", spoken)
+
+    def test_caps_the_names_read_aloud(self):
+        spoken = messages.spoken_cashflow_summary(
+            9,
+            summary(4, 400000),
+            [self._customer(name, 100000) for name in ["Alpha", "Beta", "Gamma", "Delta"]],
+        )
+
+        self.assertIn("Alpha owes $1,000.00, Beta owes $1,000.00, Gamma owes $1,000.00 and one more.", spoken)
+
+    def test_nothing_overdue_is_one_short_sentence(self):
+        spoken = messages.spoken_cashflow_summary(2, summary(0, 0), [])
+
+        self.assertEqual(spoken, "2 invoices are open, and nothing is overdue.")
+
+    def test_single_open_invoice_is_singular(self):
+        spoken = messages.spoken_cashflow_summary(1, summary(1, 60000), [self._customer("Initech LLC", 60000)])
+
+        self.assertTrue(spoken.startswith("1 invoice is open. One is overdue"), spoken)
+
 if __name__ == "__main__":
     unittest.main()

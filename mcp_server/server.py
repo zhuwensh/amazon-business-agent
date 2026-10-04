@@ -152,10 +152,11 @@ def get_overdue_invoices(customer: str, customer_id: str | None = None) -> dict[
 
 @mcp.tool
 def get_cashflow_summary(limit: int = 100) -> dict[str, Any]:
-    """Account-wide outstanding and overdue totals.
+    """Account-wide outstanding and overdue totals, and who owes the money.
 
-    Use this when the user asks how the business is doing rather than about a
-    specific customer.
+    Use this when the user asks how the business is doing, or who owes them,
+    rather than about a specific customer. The per-customer rollup is the only way
+    into the data for a user who has not been told any customer names.
     """
     try:
         invoices = stripe.list_open_invoices(limit=limit)
@@ -168,21 +169,23 @@ def get_cashflow_summary(limit: int = 100) -> dict[str, Any]:
         code = (inv.get("currency") or "usd").lower()
         outstanding[code] = outstanding.get(code, 0) + rules.amount_due_minor(inv)
 
+    by_customer: list[dict[str, Any]] = []
+    if summary["count"]:
+        try:
+            customers = stripe.customers_by_id(stripe.list_customers(limit=100))
+        except stripe.StripeError as exc:
+            return _error(f"Stripe customer lookup failed: {exc}")
+        by_customer = rules.group_overdue_by_customer(invoices, customers)
+
     payload = {
         "open_invoice_count": len(invoices),
         "outstanding_by_currency": outstanding,
         "overdue_count": summary["count"],
         "overdue_by_currency": summary["totals_by_currency"],
         "oldest_overdue_days": summary["oldest_days"],
+        "overdue_by_customer": by_customer,
     }
-    if summary["count"] == 0:
-        spoken = f"{len(invoices)} invoices are open, and nothing is overdue."
-    else:
-        spoken = (
-            f"{len(invoices)} invoices are open. "
-            f"{summary['count']} are overdue, {messages.total_phrase(summary)}."
-        )
-    return _ok(payload, spoken)
+    return _ok(payload, messages.spoken_cashflow_summary(len(invoices), summary, by_customer))
 
 
 @mcp.tool

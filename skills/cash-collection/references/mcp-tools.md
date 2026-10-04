@@ -53,14 +53,18 @@ Returns `data.count`, `data.total_minor`, `data.currency`, `data.oldest_days` an
 
 ## `get_cashflow_summary`
 
-Account-wide totals, for questions like "how are we doing this month?".
+Account-wide totals, for questions like "how are we doing this month?" or
+"who owes us money?" - including the customers behind the overdue balance.
 
 | Argument | Type | Notes |
 |---|---|---|
 | `limit` | integer, optional | how many open invoices to consider (default 100) |
 
 Returns `data.open_invoice_count`, `data.outstanding_by_currency`,
-`data.overdue_count`, `data.overdue_by_currency` and `data.oldest_overdue_days`.
+`data.overdue_count`, `data.overdue_by_currency`, `data.oldest_overdue_days` and
+`data.overdue_by_customer` - one row per customer (`customer_id`, `customer`,
+`overdue_count`, `oldest_days`, `currency`, `total_minor`,
+`totals_by_currency`), largest debt first.
 
 ---
 

@@ -136,6 +136,57 @@ def summarize_overdue(
     }
 
 
+def group_overdue_by_customer(
+    invoices: Iterable[dict[str, Any]],
+    customers_by_id: dict[str, dict[str, Any]] | None = None,
+    now: datetime | int | float | None = None,
+) -> list[dict[str, Any]]:
+    """Roll overdue invoices up per customer, largest debt first.
+
+    `summarize_overdue` answers "how are we doing"; this answers "who owes us".
+    That second question has no other route in: every other read tool takes a
+    customer name, and a user who has never been told the names cannot supply one.
+    Names come from the customer records here, never from the model.
+    """
+    customers = customers_by_id or {}
+    grouped: dict[str, dict[str, Any]] = {}
+    for invoice in select_overdue(invoices, now):
+        raw_id = invoice.get("customer")
+        customer_id = raw_id if isinstance(raw_id, str) and raw_id else None
+        entry = grouped.setdefault(
+            customer_id or "unknown",
+            {
+                "customer_id": customer_id,
+                "customer": customer_display_name(customers.get(customer_id) if customer_id else None),
+                "overdue_count": 0,
+                "oldest_days": 0,
+                "totals_by_currency": {},
+            },
+        )
+        code = (invoice.get("currency") or "usd").lower()
+        entry["overdue_count"] += 1
+        entry["totals_by_currency"][code] = entry["totals_by_currency"].get(code, 0) + amount_due_minor(invoice)
+        entry["oldest_days"] = max(entry["oldest_days"], days_overdue(invoice.get("due_date"), now))
+
+    rows: list[dict[str, Any]] = []
+    for entry in grouped.values():
+        codes = entry["totals_by_currency"]
+        currency = next(iter(codes)) if len(codes) == 1 else None
+        rows.append(
+            {
+                **entry,
+                "currency": currency,
+                "total_minor": codes[currency] if currency else None,
+            }
+        )
+
+    # Largest debt first when everything is in one currency. A customer whose
+    # invoices span currencies has no single total, so they order by age instead of
+    # being silently summed across units that do not add up.
+    rows.sort(key=lambda row: (-(row["total_minor"] or 0), -row["oldest_days"], str(row["customer"])))
+    return rows
+
+
 def invoice_reference(invoice: dict[str, Any]) -> str:
     """Human-facing invoice reference: the number if Stripe assigned one."""
     return str(invoice.get("number") or invoice.get("id") or "unknown")

@@ -45,7 +45,7 @@ Five load-bearing rules:
 | MCP server | `python -m mcp_server.server` → `http://127.0.0.1:8000/mcp` |
 | Simulator | `python -m web_demo.app` → `http://127.0.0.1:8080` (`WEB_PORT`) |
 | Agent, one turn | `python -m agent.agent "Does Acme have anything overdue?"` |
-| Offline tests | `python -m unittest discover -s tests -v` — 39 tests, no network |
+| Offline tests | `python -m unittest discover -s tests -v` — 46 tests, no network |
 | End-to-end smoke test | `python scripts/smoke_test.py` (add `SMOKE_TEST_SLACK=1` to post for real) |
 | Bedrock configuration check | `python scripts/check_bedrock.py` — three steps, the third is tool calling |
 | Refresh demo data | `python -m demo.seed_test_data` |
@@ -53,7 +53,7 @@ Five load-bearing rules:
 Everything reads `.env` through `mcp_server.config.bootstrap()`. **Restart the
 server after an `.env` change** — nothing re-reads it live.
 
-Status at this handoff: 39 offline tests pass; the smoke test passes end to end;
+Status at this handoff: 46 offline tests pass; the smoke test passes end to end;
 the agent has been run against Bedrock and completed the full three-turn workflow,
 with a real Stripe reminder and a real Slack message.
 
@@ -160,6 +160,28 @@ Same pass: `slack_tools.post_message` treated any 2xx as success. A webhook path
 that no longer exists answers HTTP 200 with an HTML help page, so a dead webhook
 read as "notified #finance" while posting nothing. It now requires the literal
 `ok` body that Slack returns for a real post.
+
+
+### 10. The account-wide answer could not name anyone
+
+Asking for every customer with an overdue invoice dead-ended: `find_customer`
+needs a name, `get_overdue_invoices` needs a customer, and
+`get_cashflow_summary` reported only counts and currency totals. A user who has
+never been told the customer names has no way in - and "who owes us money?" is
+the most natural first question for this assistant, not an edge case.
+
+`get_cashflow_summary` now also returns `data.overdue_by_customer` (largest debt
+first: `customer_id`, `customer`, `overdue_count`, `oldest_days`, `currency`,
+`total_minor`, `totals_by_currency`) and reads up to three names aloud. The
+grouping lives in `business_rules.group_overdue_by_customer`, so it is pure
+arithmetic with unit tests and no network; names come from the customer records,
+never from the model. The customer lookup only runs when something is overdue, so
+"nothing is overdue" is still a single Stripe request.
+
+Verified live on Bedrock: before the change the same question produced no tool
+call at all and a plain refusal; afterwards gpt-oss-20b calls
+`get_cashflow_summary` on its own and answers with the customer names. The names
+were what had been missing.
 
 
 ## Open issues

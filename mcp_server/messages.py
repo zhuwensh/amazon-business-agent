@@ -17,6 +17,9 @@ NUMBER_WORDS = {
 }
 
 
+MAX_SPOKEN_CUSTOMERS = 3
+
+
 def number_word(count: int) -> str:
     return NUMBER_WORDS.get(count, str(count))
 
@@ -37,6 +40,56 @@ def total_phrase(summary: dict[str, Any]) -> str:
         return "with no outstanding balance"
     parts = [rules.format_money(amount, code) for code, amount in sorted(totals.items())]
     return "totalling " + " and ".join(parts)
+
+
+def owed_phrase(entry: dict[str, Any]) -> str:
+    """One customer debt in money form, for example "$3,200.00"."""
+    currency = entry.get("currency")
+    if currency:
+        return rules.format_money(entry.get("total_minor"), currency)
+    totals = entry.get("totals_by_currency") or {}
+    if not totals:
+        return "nothing"
+    return " and ".join(rules.format_money(amount, code) for code, amount in sorted(totals.items()))
+
+
+def _and_list(items: Sequence[str]) -> str:
+    if len(items) == 1:
+        return items[0]
+    return ", ".join(items[:-1]) + " and " + items[-1]
+
+
+def spoken_cashflow_summary(
+    open_invoice_count: int, summary: dict[str, Any], by_customer: Sequence[dict[str, Any]]
+) -> str:
+    """The sentence read aloud after `get_cashflow_summary`.
+
+    Naming the customers is the point. A user cannot name a company they were
+    never told about, so an account-wide answer that only reports totals leaves
+    them with nowhere to go. Three names is as much as reads well aloud; the rest
+    stay in `data` and in the follow-up question.
+    """
+    open_count = int(open_invoice_count or 0)
+    overdue_count = int(summary.get("count") or 0)
+    open_label = plural(open_count, "invoice")
+    open_verb = plural(open_count, "is", "are")
+    opens = f"{open_count} {open_label} {open_verb} open."
+    if not overdue_count:
+        return opens[:-1] + ", and nothing is overdue."
+
+    overdue_verb = plural(overdue_count, "is", "are")
+    # The count starts this sentence, so it is capitalised: "Three are overdue".
+    sentence = f"{opens} {number_word(overdue_count).capitalize()} {overdue_verb} overdue, {total_phrase(summary)}"
+    debts = [
+        f"{entry.get('customer') or 'a customer'} owes {owed_phrase(entry)}" for entry in by_customer
+    ]
+    if not debts:
+        return sentence + "."
+    visible = debts[:MAX_SPOKEN_CUSTOMERS]
+    hidden = len(debts) - len(visible)
+    if hidden > 0:
+        visible = visible + [f"{number_word(hidden)} more"]
+    return sentence + ": " + _and_list(visible) + "."
 
 
 def spoken_overdue_summary(customer_name: str, summary: dict[str, Any]) -> str:
